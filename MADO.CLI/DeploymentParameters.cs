@@ -1,31 +1,83 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using CommandLine;
+using System;
+using System.IO;
 
 namespace MADO.CLI
 {
     public class DeploymentParameters
     {
-        public string BaseDirectory = @"F:\My Projects\RubikCalc\src\rubikcalc";
-        public string ApkTargetDirectory = @"C:\Users\AbdlrhmanShehata\Desktop";
-        public string PackageName = "com.programmablecalculator.rubikcalcultra";
-        public string ReleaseName = "rubikcalcultra";
-        public string KeystoreFilePath = @"C:\Users\AbdlrhmanShehata\OneDrive\4.Mobile App Business\Applications Management\keystores\wisebay.programmablecalculator.pro.jks";
-        public string KeystoreAlias = "rubik123";
-        public string KeystoreType = "jks";
-        public string KeystorePassword = "rubik123";
-        public string KeyPassword = "rubik123";
-        public string versionName = "1.3.1";
-        public string versionCode = "6";
-        public string CredentialsPath = @"C:\Users\AbdlrhmanShehata\OneDrive\4.Mobile App Business\Applications Management\client_secret_801942528673-iso7ja1i2gtoh78fjsn0qar4pltvavf2.apps.googleusercontent.com.json";
+        [Option("BaseDirectory", Required = true, HelpText = "Base directory of the project.")]
+        public string BaseDirectory { get; set; }
+
+        [Option("PackageName", Required = true, HelpText = "Package name of the application")]
+        public string PackageName { get; set; }
+
+        [Option("ReleasePrefix", Required = true, HelpText = "Release name prefix to be attached to the full name")]
+        public string ReleasePrefix { get; set; }
+
+        [Option("KeystoreFilePath", Required = true, HelpText = "Release name prefix to be attached to the full name")]
+        public string KeystoreFilePath { get; set; }
+
+        [Option("KeystoreAlias", Required = true, HelpText = "Keystore alias")]
+        public string KeystoreAlias { get; set; }
+
+        [Option("KeystoreType", Required = false, HelpText = "Keystore type (jks)",Default ="jks")]
+        public string KeystoreType { get; set; }
+
+        [Option("KeystorePassword", Required = true, HelpText = "Password of the store")]
+        public string KeystorePassword { get; set; }
+
+        [Option("KeyPassword", Required = true, HelpText = "Password of the key")]
+        public string KeyPassword { get; set; }
+
+        [Option("ApkTargetDirectory", Required = true, HelpText = "Target directory ")]
+        public string ApkTargetDirectory { get; set; }
+
+        [Option("VersionName", Required = true, HelpText = "")]
+        public string VersionName { get; set; }
+
+        [Option("VersionCode", Required = true, HelpText = "")]
+        public string VersionCode { get; set; }
+
+        [Option("CredentialsPath", Required = true, HelpText = "")]
+        public string CredentialsPath { get; set; }
+
+        [Option("TrackName", Required = true, HelpText = "Name of the track on GooglePlay [production,alpha,beta]")]
         //[production,beta,alpha]
-        public string TrackName = "alpha";
+        public string TrackName { get; set; }
+
+        [Option("ReleaseStatus", Required = true, HelpText = "Status of the release to be deployed [draft,completed]")]
         //[completed,draft]
-        public string ReleaseStatus = "draft";
-        public bool KeepTerminal = false;
-        public bool ShowTerminal = false;
-        public bool Rebuild = false;
+        public string ReleaseStatus { get; set; }
+
+        [Option('t',"ShowTerminal", Required = false, HelpText = "Show the terminal")]
+        public bool? ShowTerminal { get; set; }
+
+        [Option('r',"Rebuild", Required = false, HelpText = "Rebuild the project")]
+        public bool? Rebuild { get; set; }
+
+        public void Validate()
+        {
+            if (!Directory.Exists(BaseDirectory))
+            {
+                throw new Exception("Couldn't locate the project folder");
+            }
+
+            int versionCode = -1;
+            if (!int.TryParse(VersionCode, out versionCode))
+            {
+                throw new Exception("Cannot parse version code");
+            }
+
+            if (!Directory.Exists(ApkTargetDirectory))
+            {
+                throw new Exception("APK target directory doesn't exist");
+            }
+
+            if (!File.Exists(KeystoreFilePath))
+            {
+                throw new Exception("Keystore file not found");
+            }
+        }
     }
 }

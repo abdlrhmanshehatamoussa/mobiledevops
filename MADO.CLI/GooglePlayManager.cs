@@ -45,7 +45,7 @@ namespace MADO.CLI
         
         public async Task UploadAPK(string apkPath, DeploymentParameters parameters)
         {
-            Logger.instance.LogMessage("Uploading APK ...");
+            Logger.instance.LogInfo("Uploading APK ...");
             string packageName = parameters.PackageName;
             if (!Initialized)
             {
@@ -66,9 +66,9 @@ namespace MADO.CLI
             Track track = new Track();
             track.TrackValue = parameters.TrackName;
             TrackRelease release = new TrackRelease();
-            release.Name = $"{parameters.ReleaseName}.VC{parameters.versionCode}.V{parameters.versionName}";
+            release.Name = $"{parameters.ReleasePrefix}.VC{parameters.VersionCode}.V{parameters.VersionName}";
             long versionCodeLong = -1;
-            if(!long.TryParse(parameters.versionCode, out versionCodeLong))
+            if(!long.TryParse(parameters.VersionCode, out versionCodeLong))
             {
                 throw new Exception("Failed to parse version code");
             }
@@ -79,7 +79,7 @@ namespace MADO.CLI
             };
             await this.Service.Edits.Tracks.Update(track, packageName, editId, track.TrackValue).ExecuteAsync();
             await this.Service.Edits.Commit(packageName, editId).ExecuteAsync();
-            Logger.instance.LogMessage("APK uploaded successfully !");
+            Logger.instance.LogInfo("APK uploaded successfully !");
         }
     }
 }

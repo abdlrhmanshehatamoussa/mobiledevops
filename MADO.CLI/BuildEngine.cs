@@ -38,18 +38,13 @@ namespace MADO.CLI
         /// Apk Path, Keystore Path,Keystore Type, Keystore Password, Key Password, Key Alias
         /// </summary>
         private const string SCRIPT_SIGN = "call zipalign -c -v 4 \"{0}\"\ncall apksigner sign --ks \"{1}\" --ks-type {2} --ks-pass pass:{3} --key-pass pass:{4} --ks-key-alias {5} \"{0}\"";
-
-        /// <summary>
-        /// Pause Constant
-        /// </summary>
-        private const string TEMPLATE_PAUSE = "\npause";
         #endregion
 
 
 
         public static async Task<string> Build(DeploymentParameters parameters)
         {
-            Logger.instance.LogMessage($"Generating apk ...");
+            Logger.instance.LogInfo($"Generating apk ...");
             string buildScript = string.Empty;
             string apkReleaseDirectory = string.Empty;
             string apkName = string.Empty;
@@ -84,19 +79,19 @@ namespace MADO.CLI
 
             //Creating Build Script
             string buildScriptPath = Path.Combine(Path.GetTempPath(), $"build_{Guid.NewGuid()}.bat");
-            buildScript = parameters.KeepTerminal ? buildScript + TEMPLATE_PAUSE : buildScript;
             string buildFileContent = string.Format(buildScript, parameters.BaseDirectory);
             File.WriteAllText(buildScriptPath, buildFileContent);
 
 
             //Generating APK
-            if (parameters.Rebuild)
+            if (parameters.Rebuild != null && parameters.Rebuild.Value == true)
             {
                 Process proc = new Process();
                 proc.StartInfo.FileName = buildScriptPath;
-                if (parameters.ShowTerminal == false)
+                proc.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                if (parameters.ShowTerminal.HasValue && parameters.ShowTerminal == true)
                 {
-                    proc.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                    proc.StartInfo.WindowStyle = ProcessWindowStyle.Normal;
                 }
                 await Task.Run(() =>
                 {
@@ -106,11 +101,11 @@ namespace MADO.CLI
             }
             else
             {
-                Logger.instance.LogMessage($"Build step has been skipped");
+                Logger.instance.LogInfo($"Build step has been skipped");
             }
             string timestamp = DateTime.Now.ToString("yyyy.MM.dd.hh.mm.ss");
-            string apkTargetName = $"{parameters.PackageName}.VC{parameters.versionCode}.V{parameters.versionName}.{timestamp}.apk";
-            string outputFileName = $"{parameters.PackageName}.VC{parameters.versionCode}.V{parameters.versionName}.{timestamp}.json";
+            string apkTargetName = $"{parameters.PackageName}.VC{parameters.VersionCode}.V{parameters.VersionName}.{timestamp}.apk";
+            string outputFileName = $"{parameters.PackageName}.VC{parameters.VersionCode}.V{parameters.VersionName}.{timestamp}.json";
             string apkTargetPath = Path.Combine(parameters.ApkTargetDirectory, apkTargetName);
             string apkSourcePath = parameters.BaseDirectory + apkReleaseDirectory + @"\" + apkName;
             string outputFilePath = parameters.BaseDirectory + apkReleaseDirectory + @"\output.json";
@@ -128,20 +123,19 @@ namespace MADO.CLI
             {
                 throw new Exception($"Failed to locate the generated apk or the outputfile -> [{apkSourcePath}]");
             }
-            Logger.instance.LogMessage($"Apk generated successfully at [{apkTargetPath}]");
+            Logger.instance.LogInfo($"Apk generated successfully at [{apkTargetPath}]");
             return apkTargetPath;
         }
 
         public static async Task Sign(string apkPath, DeploymentParameters parameters)
         {
-            Logger.instance.LogMessage($"Signing apk ...");
+            Logger.instance.LogInfo($"Signing apk ...");
             if (!File.Exists(apkPath))
             {
                 throw new Exception($"Failed to locate the apk at [{apkPath}]");
             }
             //Sign APK
             string signScript = SCRIPT_SIGN;
-            signScript = parameters.KeepTerminal ? signScript + TEMPLATE_PAUSE : signScript;
             string signContent = string.Format(signScript,
                 apkPath,
                 parameters.KeystoreFilePath,
@@ -158,18 +152,18 @@ namespace MADO.CLI
             }
             Process proc = new Process();
             proc.StartInfo.FileName = signScriptPath;
-            if (parameters.ShowTerminal == false)
+            proc.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            if (parameters.ShowTerminal.HasValue && parameters.ShowTerminal == true)
             {
-                proc.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                proc.StartInfo.WindowStyle = ProcessWindowStyle.Normal;
             }
             await Task.Run(() =>
             {
                 proc.Start();
                 proc.WaitForExit();
             });
-            File.Delete(parameters.KeystoreFilePath);
             File.Delete(signScriptPath);
-            Logger.instance.LogMessage("APK signed successfully");
+            Logger.instance.LogInfo("APK signed successfully");
         }
 
 

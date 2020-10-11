@@ -1,4 +1,7 @@
-﻿using System;
+﻿using CommandLine;
+using System;
+using System.Diagnostics;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace MADO.CLI
@@ -7,14 +10,25 @@ namespace MADO.CLI
     {
         static void Main(string[] args)
         {
-            DeploymentParameters parameters = new DeploymentParameters();
-            Deploy(parameters).Wait();
-            Console.ReadLine();
+            try
+            {
+                Parser.Default.ParseArguments<DeploymentParameters>(args).WithParsed<DeploymentParameters>(p => {
+                    p.Validate();
+                    Deploy(p).Wait();
+                });
+            }catch(Exception e)
+            {
+                Logger.instance.Log($"Error while parsing arguments: {e.Message}", null, false);
+            }
         }
 
         static async Task Deploy(DeploymentParameters parameters)
         {
-            Logger.instance.LogMessage($"Deployment started [Rebuild={parameters.Rebuild}, keep-terminal={parameters.KeepTerminal}, show-terminal={parameters.ShowTerminal}]");
+            Assembly assembly = Assembly.GetExecutingAssembly();
+            FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(assembly.Location);
+            string version = fvi.FileVersion;
+            Logger.instance.Log($"Welcome to MADO V{version} ",null,false);
+            Logger.instance.LogInfo($"Deployment started [Rebuild={parameters.Rebuild}, show-terminal={parameters.ShowTerminal}]");
             try
             {
                 string apkPath = string.Empty;
@@ -26,8 +40,7 @@ namespace MADO.CLI
             catch (Exception e)
             {
                 Logger.instance.LogError(e.Message);
-            }
-            
+            }   
         }
     }
 }
